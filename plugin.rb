@@ -46,33 +46,12 @@ after_initialize do
   end
 
   module ::DiscourseGhostbanPostAlerter
-=begin
     def create_notification(user, type, post, opts = {})
       if (SiteSetting.ghostban_show_to_staff && user&.staff?) || SiteSetting.ghostban_users.split('|').find_index(post.user&.username_lower).nil?
         super(user, type, post, opts)
       end
     end
   end
-=end
-
-    def create_notification(user, type, post, opts = {})
-      if user&.staff?
-        super(user, type, post, opts)
-      else
-        # Check if the post is by a shadowbanned user
-        shadowbanned_users = SiteSetting.ghostban_users.split('|')
-        if shadowbanned_users.include?(post.user&.username_lower)
-        # Allow admins to reply to hidden posts by shadowbanned users
-          super(user, type, post, opts)
-        else
-          # Hide the notification for non-shadowbanned users
-          opts[:notification_type] = Notification.types[:silenced]
-          super(user, type, post, opts)
-        end
-      end
-    end
-  end
-
 
   class ::PostAlerter
     prepend ::DiscourseGhostbanPostAlerter
