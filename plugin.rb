@@ -1,12 +1,11 @@
 # name: ghostban
 # about: Hide a user's posts from everybody else
-# version: 0.0.3
+# version: 0.0.4
 # authors: cap_dvij
 
 enabled_site_setting :ghostban_enabled
 
 after_initialize do
-
   module ::DiscourseGhostbanTopicView
     def filter_post_types(posts)
       result = super(posts)
@@ -49,7 +48,7 @@ after_initialize do
 
   module ::DiscourseGhostbanPostAlerter
     def create_notification(user, type, post, opts = {})
-      if (SiteSetting.ghostban_show_to_staff && user&.staff?) || SiteSetting.ghostban_users.split('|').find_index(post.user&.username_lower).nil?
+      if (SiteSetting.ghostban_show_to_staff && user&.staff?) || SiteSetting.ghostban_users.split('|').include?(post.user&.username_lower)
         super(user, type, post, opts)
       end
     end
@@ -61,12 +60,13 @@ after_initialize do
 
   module ::DiscourseGhostbanPostCreator
     def update_topic_stats
-      if SiteSetting.ghostban_users.split('|').find_index(@post.user&.username_lower).nil?
+      if SiteSetting.ghostban_users.split('|').include?(@post.user&.username_lower)
         super
       end
     end
+
     def update_user_counts
-      if SiteSetting.ghostban_users.split('|').find_index(@post.user&.username_lower).nil?
+      if SiteSetting.ghostban_users.split('|').include?(@post.user&.username_lower)
         super
       end
     end
