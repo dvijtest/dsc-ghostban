@@ -1,9 +1,7 @@
 # name: ghostban
 # about: Hide a user's posts from everybody else
-# version: 0.0.8
+# version: 0.0.9
 # authors: cap_dvij
-
-enabled_site_setting :ghostban_enabled
 
 after_initialize do
 
@@ -14,11 +12,10 @@ after_initialize do
         result
       else
         result.where(
-          'posts.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) AND NOT (posts.user_id IN (SELECT u.id FROM users u WHERE admin AND u.id != ?)) OR posts.user_id = ?',
+          'posts.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) AND NOT (posts.user_id IN (SELECT u.id FROM users u WHERE admin AND u.id != ?))',
           SiteSetting.ghostban_users.split('|'),
           @user&.id || 0,
-          @user&.id || 0,
-          @topic&.user_id || 0
+          @user&.id || 0
         )
       end
     end
@@ -35,11 +32,10 @@ after_initialize do
         result
       else
         result.where(
-          'topics.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) AND NOT (topics.user_id IN (SELECT u.id FROM users u WHERE admin AND u.id != ?)) OR topics.user_id = ?',
+          'topics.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) AND NOT (topics.user_id IN (SELECT u.id FROM users u WHERE admin AND u.id != ?))',
           SiteSetting.ghostban_users.split('|'),
           @user&.id || 0,
-          @user&.id || 0,
-          @topic&.user_id || 0
+          @user&.id || 0
         )
       end
     end
@@ -51,7 +47,7 @@ after_initialize do
 
   module ::DiscourseGhostbanPostAlerter
     def create_notification(user, type, post, opts = {})
-      if (SiteSetting.ghostban_show_to_staff && user&.staff?) || SiteSetting.ghostban_users.split('|').find_index(post.user&.username_lower).nil? || post.user&.admin?
+      if (SiteSetting.ghostban_show_to_staff && user&.staff?) || SiteSetting.ghostban_users.split('|').find_index(post.user&.username_lower).nil?
         super(user, type, post, opts)
       end
     end
@@ -63,6 +59,17 @@ after_initialize do
 
   module ::DiscourseGhostbanPostCreator
     def update_topic_stats
+      # Make the admin's reply to the hidden post visible to the hidden post's author and everyone, by updating the `hidden` attribute of the post to `false`. It will also update the topic stats accordingly.
+      if SiteSetting.ghostban_show_to_staff && @user&.staff?
+        @topic.update!(posts_count: @topic.posts_count + 1, replies_count: @topic.replies_count + 1)
+        @topic.posts.where(user_id: @user.id).update_all(hidden: false)
+      end
+
+      # Make the admin's topic level post visible to everyone
+      if @user&.staff? && @post.topic_level?
+        @post.update_attributes(hidden: false)
+      end
+
       if SiteSetting.ghostban_users.split('|').find_index(@post.user&.username_lower).nil?
         super
       end
