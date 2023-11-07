@@ -1,6 +1,6 @@
 # name: ghostban
 # about: Hide a user's posts from everybody else
-# version: 0.0.5
+# version: 0.0.6
 # authors: cap_dvij
 
 enabled_site_setting :ghostban_enabled
@@ -14,10 +14,8 @@ after_initialize do
         result
       else
         result.where(
-          'posts.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) AND NOT (posts.user_id IN (SELECT u.id FROM users u WHERE admin AND u.id != ?)) OR (posts.user_id = ? OR posts.user_id IN (SELECT u.id FROM users u WHERE admin AND u.id != ?))',
+          'posts.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) AND NOT (posts.user_id IN (SELECT u.id FROM users u WHERE admin AND u.id != ?))',
           SiteSetting.ghostban_users.split('|'),
-          @user&.id || 0,
-          @user&.id || 0,
           @user&.id || 0,
           @user&.id || 0
         )
@@ -51,7 +49,7 @@ after_initialize do
 
   module ::DiscourseGhostbanPostAlerter
     def create_notification(user, type, post, opts = {})
-      if (SiteSetting.ghostban_show_to_staff && user&.staff?) || SiteSetting.ghostban_users.split('|').find_index(post.user&.username_lower).nil? || user&.admin?
+      if (SiteSetting.ghostban_show_to_staff && user&.staff?) || SiteSetting.ghostban_users.split('|').find_index(post.user&.username_lower).nil?
         super(user, type, post, opts)
       end
     end
@@ -63,13 +61,12 @@ after_initialize do
 
   module ::DiscourseGhostbanPostCreator
     def update_topic_stats
-      if SiteSetting.ghostban_users.split('|').find_index(@post.user&.username_lower).nil? || @post.user&.admin?
+      if SiteSetting.ghostban_users.split('|').find_index(@post.user&.username_lower).nil?
         super
       end
     end
-
     def update_user_counts
-      if SiteSetting.ghostban_users.split('|').find_index(@post.user&.username_lower).nil? || @post.user&.admin?
+      if SiteSetting.ghostban_users.split('|').find_index(@post.user&.username_lower).nil?
         super
       end
     end
