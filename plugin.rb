@@ -29,19 +29,18 @@ after_initialize do
 
   module ::DiscourseGhostbanTopicQuery
     def default_results(options = {})
-      result = super(options)
-      if SiteSetting.ghostban_show_to_staff && @user&.staff?
-        result
-      else
-        result.where(
-          'topics.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) AND NOT (topics.user_id IN (SELECT u.id FROM users u WHERE admin AND u.id != ?))',
-          SiteSetting.ghostban_users.split('|'),
-          @user&.id || 0,
-          @user&.id || 0
-        )
-      end
+    result = super(options)
+    if SiteSetting.ghostban_show_to_staff && @user&.staff?
+    result
+    else
+    result.where(
+    'topics.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?)',
+    SiteSetting.ghostban_users.split('|'),
+    @user&.id || 0
+    )
     end
-  end
+    end
+    end
 
   class ::TopicQuery
     prepend ::DiscourseGhostbanTopicQuery
