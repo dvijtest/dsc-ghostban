@@ -8,7 +8,7 @@ enabled_site_setting :ghostban_enabled
 after_initialize do
 
   if !PostCustomField.new.respond_to?(:is_reply_to_ghostbanned)
-    require Rails.root.join('plugins', 'ghostban', 'migrations', 'add_column')
+    require Rails.root.join('plugins', 'dsc-ghostban', 'migrations', 'add_column')
     AddColumns.new.up # <-- this runs the migration
   end
 
