@@ -7,10 +7,12 @@ enabled_site_setting :ghostban_enabled
 
 after_initialize do
 
+=begin
   if !PostCustomField.new.respond_to?(:is_reply_to_ghostbanned)
     require Rails.root.join('plugins', 'dsc-ghostban', 'migrations', 'add_column')
     AddColumns.new.up # <-- this runs the migration
   end
+=end
 
   module ::DiscourseGhostbanTopicView
     def filter_post_types(posts)
