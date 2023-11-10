@@ -11,6 +11,12 @@ after_initialize do
   #     AddColumns.new.up # <-- this runs the migration
   #   end
 
+  class AddIsReplyToGhostbannedToPosts < ActiveRecord::Migration[6.0]
+    def change
+      add_column :posts, :is_reply_to_ghostbanned, :boolean, default: false
+    end
+  end
+
   module ::DiscourseGhostbanTopicView
     def filter_post_types(posts)
       result = super(posts)
