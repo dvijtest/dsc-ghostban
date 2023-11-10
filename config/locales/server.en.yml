@@ -2,6 +2,5 @@
 en:
   site_settings:
     ghostban_enabled: "Enable ghostban"
-    #ghostban_users: "Users subject to the ghostban"
-    ghostban_posts: "Users subject to the ghostban"
+    ghostban_users: "Users subject to the ghostban"
     ghostban_show_to_staff: "Show ghostbanned posts to staff"
