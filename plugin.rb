@@ -1,6 +1,6 @@
 # name: dsc-ghostban
 # about: Hide a user's posts from everybody else
-# version: 0.0.12
+# version: 0.0.14
 # authors: cap_dvij
 
 enabled_site_setting :ghostban_enabled
@@ -74,6 +74,17 @@ after_initialize do
   end
 
   module ::DiscourseGhostbanPostCreator
+    #     def update_topic_stats
+    #       return unless SiteSetting.ghostban_users.split('|').find_index(@post.user&.username_lower).nil?
+    #
+    #       super
+    #     end
+    #
+    #     def update_user_counts
+    #       return unless SiteSetting.ghostban_users.split('|').find_index(@post.user&.username_lower).nil?
+    #
+    #       super
+    #     end
     def update_topic_stats
       return unless SiteSetting.ghostban_users.split('|').find_index(@post.user&.username_lower).nil?
 
