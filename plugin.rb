@@ -20,6 +20,7 @@ after_initialize do
   module ::DiscourseGhostbanTopicView
     def filter_post_types(posts)
       result = super(posts)
+
       if SiteSetting.ghostban_show_to_staff && @user&.staff?
         result
       else
@@ -74,26 +75,13 @@ after_initialize do
   end
 
   module ::DiscourseGhostbanPostCreator
-    #     def update_topic_stats
-    #       return unless SiteSetting.ghostban_users.split('|').find_index(@post.user&.username_lower).nil?
-    #
-    #       super
-    #     end
-    #
-    #     def update_user_counts
-    #       return unless SiteSetting.ghostban_users.split('|').find_index(@post.user&.username_lower).nil?
-    #
-    #       super
-    #     end
     def update_topic_stats
       return unless SiteSetting.ghostban_users.split('|').find_index(@post.user&.username_lower).nil?
-
       super
     end
 
     def update_user_counts
       return unless SiteSetting.ghostban_users.split('|').find_index(@post.user&.username_lower).nil?
-
       super
     end
   end
