@@ -2,7 +2,8 @@ plugins:
   ghostban_enabled:
     default: true
     client: true
-  ghostban_users:
+  #ghostban_users:
+  ghostban_posts:
     default: ""
     client: false
   ghostban_show_to_staff:

@@ -1,21 +1,13 @@
 # name: dsc-ghostban
 # about: Hide a user's posts from everybody else
-# version: 0.0.19
+# version: 0.0.20
 # authors: cap_dvij
 
-enabled_site_setting :ghostban_enabled
+# define a new site setting called ghostban_posts, which is a list of post numbers or post ids separated by commas
+enabled_site_setting :ghostban_posts
 
 after_initialize do
-  #   if !PostCustomField.new.respond_to?(:is_reply_to_ghostbanned)
-  #     require Rails.root.join('plugins', 'dsc-ghostban', 'migrations', 'add_column')
-  #     AddColumns.new.up # <-- this runs the migration
-  #   end
-
-  class AddIsReplyToGhostbannedToPosts < ActiveRecord::Migration[6.0]
-    def change
-      add_column :posts, :is_reply_to_ghostbanned, :boolean, default: false
-    end
-  end
+  # ...
 
   module ::DiscourseGhostbanTopicView
     def filter_post_types(posts)
@@ -24,31 +16,14 @@ after_initialize do
       if SiteSetting.ghostban_show_to_staff && @user&.staff?
         result
       else
-        # result.where(
-        # 'posts.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) AND NOT (posts.user_id IN (SELECT u.id FROM users u WHERE admin AND u.id != ?))',
-        # 'posts.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) AND NOT (posts.user_id IN (SELECT u.id FROM users u WHERE admin AND u.id != ?)) OR posts.user_id IN (SELECT u.id FROM users u WHERE admin)',
-        # SiteSetting.ghostban_users.split('|'),
-        # @user&.id || 0,
-        # @user&.id || 0
-        # )
+        # change the where clause to check if the post number or post id is in the ghostban_posts site setting
         result.where(
-          'posts.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) AND NOT (posts.user_id IN (SELECT u.id FROM users u WHERE admin AND u.id != ?) OR posts.topic_id IN (SELECT t.id FROM topics t WHERE t.archetype = ?))',
-          SiteSetting.ghostban_users.split('|'),
-          @user&.id || 0,
-          @user&.id || 0,
-          'private_message'
+          'posts.post_number NOT IN (?) OR posts.id NOT IN (?)',
+          SiteSetting.ghostban_posts.split(','),
+          SiteSetting.ghostban_posts.split(',')
         )
-        #         result.where(
-        #           'posts.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) AND NOT (posts.is_reply_to_ghostbanned AND NOT posts.user_id IN (SELECT u.id FROM users u WHERE admin))',
-        #           SiteSetting.ghostban_users.split('|'),
-        #           @user&.id || 0
-        #           )
       end
     end
-  end
-
-  class ::TopicView
-    prepend ::DiscourseGhostbanTopicView
   end
 
   module ::DiscourseGhostbanTopicQuery
@@ -57,47 +32,42 @@ after_initialize do
       if SiteSetting.ghostban_show_to_staff && @user&.staff?
         result
       else
+        # change the where clause to check if the topic's first post number or post id is in the ghostban_posts site setting
         result.where(
-          # 'topics.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?)',
-          'topics.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) OR topics.user_id IN (SELECT u.id FROM users u WHERE admin)',
-          SiteSetting.ghostban_users.split('|'),
-          @user&.id || 0
+          'topics.posts_count > 1 OR topics.highest_post_number NOT IN (?) OR topics.first_post_id NOT IN (?)',
+          SiteSetting.ghostban_posts.split(','),
+          SiteSetting.ghostban_posts.split(',')
         )
       end
     end
   end
 
-  class ::TopicQuery
-    prepend ::DiscourseGhostbanTopicQuery
-  end
-
   module ::DiscourseGhostbanPostAlerter
     def create_notification(user, type, post, opts = {})
-      if (SiteSetting.ghostban_show_to_staff && user&.staff?) || SiteSetting.ghostban_users.split('|').find_index(post.user&.username_lower).nil?
+      # change the condition to check if the post number or post id is in the ghostban_posts site setting
+      if (SiteSetting.ghostban_show_to_staff && user&.staff?) || SiteSetting.ghostban_posts.split(',').find_index(post.post_number.to_s).nil? || SiteSetting.ghostban_posts.split(',').find_index(post.id.to_s).nil?
         super(user, type, post, opts)
       end
     end
   end
 
-  class ::PostAlerter
-    prepend ::DiscourseGhostbanPostAlerter
-  end
-
   module ::DiscourseGhostbanPostCreator
     def update_topic_stats
-      return unless SiteSetting.ghostban_users.split('|').find_index(@post.user&.username_lower).nil?
+      # change the condition to check if the post number or post id is in the ghostban_posts site setting
+      unless SiteSetting.ghostban_posts.split(',').find_index(@post.post_number.to_s).nil? || SiteSetting.ghostban_posts.split(',').find_index(@post.id.to_s).nil?
+        return
+      end
 
       super
     end
 
     def update_user_counts
-      return unless SiteSetting.ghostban_users.split('|').find_index(@post.user&.username_lower).nil?
+      # change the condition to check if the post number or post id is in the ghostban_posts site setting
+      unless SiteSetting.ghostban_posts.split(',').find_index(@post.post_number.to_s).nil? || SiteSetting.ghostban_posts.split(',').find_index(@post.id.to_s).nil?
+        return
+      end
 
       super
     end
-  end
-
-  class ::PostCreator
-    prepend ::DiscourseGhostbanPostCreator
   end
 end
