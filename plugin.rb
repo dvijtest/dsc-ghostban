@@ -1,6 +1,6 @@
 # name: dsc-ghostban
 # about: Hide a user's posts from everybody else
-# version: 0.0.14
+# version: 0.0.15
 # authors: cap_dvij
 
 enabled_site_setting :ghostban_enabled
@@ -50,7 +50,8 @@ after_initialize do
         result
       else
         result.where(
-          'topics.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?)',
+          #'topics.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?)',
+          'topics.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) OR topics.user_id IN (SELECT u.id FROM users u WHERE admin)',
           SiteSetting.ghostban_users.split('|'),
           @user&.id || 0
         )
