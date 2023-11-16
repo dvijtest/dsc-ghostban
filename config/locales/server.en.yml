@@ -4,4 +4,3 @@ en:
     ghostban_enabled: "Enable ghostban"
     ghostban_users: "Users subject to the ghostban"
     ghostban_show_to_staff: "Show ghostbanned posts to staff"
-    button_title: "Hide Post"
