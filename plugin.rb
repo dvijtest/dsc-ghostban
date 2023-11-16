@@ -1,6 +1,6 @@
 # name: dsc-ghostban
 # about: Hide a user's posts from everybody else
-# version: 0.0.23
+# version: 0.0.24
 # authors: cap_dvij
 
 enabled_site_setting :ghostban_enabled
@@ -43,6 +43,7 @@ after_initialize do
     prepend ::DiscourseGhostbanTopicView
   end
 
+=begin
   module ::DiscourseGhostbanTopicQuery
     def default_results(options = {})
       result = super(options)
@@ -57,6 +58,26 @@ after_initialize do
       end
     end
   end
+=end
+
+#added v24
+module ::DiscourseGhostbanTopicQuery
+  def default_results(options = {})
+    result = super(options)
+    
+    if SiteSetting.ghostban_show_to_staff && @user&.staff?
+      result
+    else
+      result.where(
+        'topics.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) AND NOT (topics.user_id IN (SELECT u.id FROM users u WHERE admin AND u.id != ?))',
+        SiteSetting.ghostban_users.split('|'),
+        @user&.id || 0,
+        @user&.id || 0
+      )
+    end
+  end
+end
+#v24
 
   class ::TopicQuery
     prepend ::DiscourseGhostbanTopicQuery
