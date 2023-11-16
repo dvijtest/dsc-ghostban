@@ -1,6 +1,6 @@
 # name: dsc-ghostban
 # about: Hide a user's posts from everybody else
-# version: 0.0.20
+# version: 0.0.21
 # authors: cap_dvij
 
 enabled_site_setting :ghostban_enabled
@@ -24,19 +24,11 @@ after_initialize do
       if SiteSetting.ghostban_show_to_staff && @user&.staff?
         result
       else
-        # result.where(
-        # 'posts.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) AND NOT (posts.user_id IN (SELECT u.id FROM users u WHERE admin AND u.id != ?))',
-        # 'posts.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) AND NOT (posts.user_id IN (SELECT u.id FROM users u WHERE admin AND u.id != ?)) OR posts.user_id IN (SELECT u.id FROM users u WHERE admin)',
-        # SiteSetting.ghostban_users.split('|'),
-        # @user&.id || 0,
-        # @user&.id || 0
-        # )
         result.where(
-          'posts.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) AND NOT (posts.user_id IN (SELECT u.id FROM users u WHERE admin AND u.id != ?) OR posts.topic_id IN (SELECT t.id FROM topics t WHERE t.archetype = ?))',
+          'posts.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) AND NOT (posts.user_id IN (SELECT u.id FROM users u WHERE admin AND u.id != ?))',
           SiteSetting.ghostban_users.split('|'),
           @user&.id || 0,
-          @user&.id || 0,
-          'private_message'
+          @user&.id || 0
         )
         #         result.where(
         #           'posts.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) AND NOT (posts.is_reply_to_ghostbanned AND NOT posts.user_id IN (SELECT u.id FROM users u WHERE admin))',
@@ -58,8 +50,7 @@ after_initialize do
         result
       else
         result.where(
-          # 'topics.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?)',
-          'topics.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) OR topics.user_id IN (SELECT u.id FROM users u WHERE admin)',
+          'topics.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?)',
           SiteSetting.ghostban_users.split('|'),
           @user&.id || 0
         )
@@ -86,13 +77,11 @@ after_initialize do
   module ::DiscourseGhostbanPostCreator
     def update_topic_stats
       return unless SiteSetting.ghostban_users.split('|').find_index(@post.user&.username_lower).nil?
-
       super
     end
 
     def update_user_counts
       return unless SiteSetting.ghostban_users.split('|').find_index(@post.user&.username_lower).nil?
-
       super
     end
   end
