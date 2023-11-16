@@ -8,14 +8,3 @@ plugins:
   ghostban_show_to_staff:
     default: false
     client: true
-  #v22
-  min_trust_level:
-  default: 0
-  type: enum
-  description: "Minimum required trust level for the button to be visible in the post menu"
-  choices:
-    - 0
-    - 1
-    - 2
-    - 3
-    - 4
