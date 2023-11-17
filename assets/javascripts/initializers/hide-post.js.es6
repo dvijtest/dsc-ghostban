@@ -10,9 +10,9 @@ export default {
       const currentUser = api.getCurrentUser();
       if (!currentUser) return;
 
-      if (
-        currentUser.staff
-      ) {
+      //if (
+        //currentUser.staff
+      //) //{
         api.attachWidgetAction("post-menu", "hidePost", function () {
           const model = this.attrs;
         });
@@ -26,7 +26,7 @@ export default {
             position: "second-last-hidden"
           };
         });
-      }
+      //}
     });
   }
 };
