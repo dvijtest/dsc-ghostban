@@ -1,22 +1,11 @@
 # name: dsc-ghostban
 # about: Hide a user's posts from everybody else
-# version: 0.0.29
+# version: 0.0.30
 # authors: cap_dvij
 
 enabled_site_setting :ghostban_enabled
 
 after_initialize do
-  #   if !PostCustomField.new.respond_to?(:is_reply_to_ghostbanned)
-  #     require Rails.root.join('plugins', 'dsc-ghostban', 'migrations', 'add_column')
-  #     AddColumns.new.up # <-- this runs the migration
-  #   end
-
-  #class AddIsReplyToGhostbannedToPosts < ActiveRecord::Migration[6.0]
-    #def change
-      #add_column :posts, :is_reply_to_ghostbanned, :boolean, default: false
-    #end
-  #end
-
   module ::DiscourseGhostbanTopicView
     def filter_post_types(posts)
       result = super(posts)
@@ -30,11 +19,14 @@ after_initialize do
           @user&.id || 0,
           @user&.id || 0
         )
-        #result.where(
-        #'posts.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) AND NOT (posts.is_reply_to_ghostbanned AND NOT posts.user_id IN (SELECT u.id FROM users u WHERE admin))',
-        #SiteSetting.ghostban_users.split('|'),
-        #@user&.id || 0
-        #)
+      end
+    end
+
+    def filter_admin_posts(posts)
+      if SiteSetting.ghostban_show_to_staff && @user&.staff?
+        posts
+      else
+        posts.where("posts.user_id IN (SELECT u.id FROM users u WHERE admin AND u.id != ?)", @user&.id || 0)
       end
     end
   end
@@ -43,41 +35,20 @@ after_initialize do
     prepend ::DiscourseGhostbanTopicView
   end
 
-     module ::DiscourseGhostbanTopicQuery
-       def default_results(options = {})
-         result = super(options)
-         if SiteSetting.ghostban_show_to_staff && @user&.staff?
-           result
-         else
-           result.where(
-             'topics.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?)',
-             SiteSetting.ghostban_users.split('|'),
-             @user&.id || 0
-           )
-         end
-       end
-     end
-
-=begin
-  # added v24
   module ::DiscourseGhostbanTopicQuery
     def default_results(options = {})
       result = super(options)
-
       if SiteSetting.ghostban_show_to_staff && @user&.staff?
         result
       else
         result.where(
-          'topics.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?) AND NOT (topics.user_id IN (SELECT u.id FROM users u WHERE admin AND u.id != ?))',
+          'topics.user_id NOT IN (SELECT u.id FROM users u WHERE username_lower IN (?) AND u.id != ?)',
           SiteSetting.ghostban_users.split('|'),
-          @user&.id || 0,
           @user&.id || 0
         )
       end
     end
   end
-  # v24
-=end
 
   class ::TopicQuery
     prepend ::DiscourseGhostbanTopicQuery
@@ -106,6 +77,14 @@ after_initialize do
       return unless SiteSetting.ghostban_users.split('|').find_index(@post.user&.username_lower).nil?
 
       super
+    end
+
+    def admin_reply_to_other_users
+      @post.topic.users.each do |user|
+        next if user.id == @post.user.id || user.staff?
+
+        PostAlerter.bump(@post, user)
+      end
     end
   end
 
