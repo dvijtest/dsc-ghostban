@@ -8,7 +8,7 @@ export default {
   initialize() {
     withPluginApi("0.11.0", api => {
       const currentUser = api.getCurrentUser();
-      if (!currentUser) return;
+      //if (!currentUser) return;
 
       //if (
         //currentUser.staff

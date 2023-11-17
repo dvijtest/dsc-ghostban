@@ -1,6 +1,6 @@
 # name: dsc-ghostban
 # about: Hide a user's posts from everybody else
-# version: 0.0.28
+# version: 0.0.29
 # authors: cap_dvij
 
 enabled_site_setting :ghostban_enabled
